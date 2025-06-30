@@ -1,9 +1,10 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');
+const path = require('path');
 
 const app = express();
-const PORT = 5000;
+const PORT = process.env.PORT || 5000;
 
 app.use(cors());
 app.use(bodyParser.json());
@@ -11,18 +12,16 @@ app.use(bodyParser.json());
 let tasks = [];
 let currentId = 1;
 
-// Root route
-app.get('/', (req, res) => {
+// API endpoints
+app.get('/api', (req, res) => {
   res.send('To-Do API is running');
 });
 
-// Get all tasks
-app.get('/tasks', (req, res) => {
+app.get('/api/tasks', (req, res) => {
   res.json(tasks);
 });
 
-// Add a task
-app.post('/tasks', (req, res) => {
+app.post('/api/tasks', (req, res) => {
   const { title } = req.body;
   if (!title || title.trim() === '') {
     return res.status(400).json({ error: 'Title is required' });
@@ -32,8 +31,7 @@ app.post('/tasks', (req, res) => {
   res.status(201).json(newTask);
 });
 
-// Toggle completed
-app.put('/tasks/:id', (req, res) => {
+app.put('/api/tasks/:id', (req, res) => {
   const task = tasks.find(t => t.id == req.params.id);
   if (!task) return res.status(404).json({ error: 'Task not found' });
 
@@ -41,12 +39,20 @@ app.put('/tasks/:id', (req, res) => {
   res.json(task);
 });
 
-// Delete a task
-app.delete('/tasks/:id', (req, res) => {
+app.delete('/api/tasks/:id', (req, res) => {
   tasks = tasks.filter(t => t.id != req.params.id);
   res.json({ message: 'Task deleted' });
 });
 
+// Serve frontend static files
+app.use(express.static(path.join(__dirname, '../frontend/build')));
+
+// Wildcard route (must be LAST)
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, '../frontend/build/index.html'));
+});
+
+// Start server
 app.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
+  console.log(`Server running on port ${PORT}`);
 });
